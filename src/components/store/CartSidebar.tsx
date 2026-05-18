@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useStore, type CartItemType } from '@/lib/store'
 import {
   Sheet,
@@ -10,7 +9,6 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ShoppingCart, Minus, Plus, Trash2, Wrench } from 'lucide-react'
 import { toast } from 'sonner'
@@ -20,66 +18,25 @@ function formatPrice(price: number): string {
 }
 
 export default function CartSidebar() {
-  const { cartOpen, setCartOpen, sessionId, cartItems, setCartItems, cartTotal, cartCount, setCurrentPage } = useStore()
-  const [loading, setLoading] = useState(false)
-
-  // Fetch cart items when sidebar opens
-  useEffect(() => {
-    if (cartOpen) {
-      fetchCart()
-    }
-  }, [cartOpen])
-
-  const fetchCart = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/cart?sessionId=${sessionId}`)
-      if (res.ok) {
-        const data = await res.json()
-        setCartItems(data.items)
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const updateQuantity = async (cartItemId: string, quantity: number) => {
-    if (quantity < 1) return
-    try {
-      const res = await fetch('/api/cart', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, cartItemId, quantity }),
-      })
-      if (res.ok) {
-        await fetchCart()
-      }
-    } catch {
-      toast.error('Ошибка при обновлении корзины')
-    }
-  }
-
-  const removeItem = async (cartItemId: string) => {
-    try {
-      const res = await fetch('/api/cart', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, cartItemId }),
-      })
-      if (res.ok) {
-        await fetchCart()
-        toast.success('Товар удалён из корзины')
-      }
-    } catch {
-      toast.error('Ошибка при удалении товара')
-    }
-  }
+  const {
+    cartOpen,
+    setCartOpen,
+    cartItems,
+    updateQuantity,
+    removeFromCart,
+    cartTotal,
+    cartCount,
+    setCurrentPage,
+  } = useStore()
 
   const goShopping = () => {
     setCartOpen(false)
     setCurrentPage('catalog')
+  }
+
+  const handleRemoveItem = (id: string) => {
+    removeFromCart(id)
+    toast.success('Товар удалён из корзины')
   }
 
   return (
@@ -183,7 +140,7 @@ export default function CartSidebar() {
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 shrink-0 text-[#78909C] hover:text-[#FF1744]"
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => handleRemoveItem(item.id)}
                     >
                       <Trash2 className="size-4" />
                     </Button>

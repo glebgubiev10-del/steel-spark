@@ -7,22 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Star, Wrench, ShoppingCart } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { toast } from 'sonner'
+import type { Product } from '@/lib/data'
 
 interface ProductCardProps {
-  product: {
-    id: string
-    name: string
-    slug: string
-    price: number
-    oldPrice?: number | null
-    image: string
-    rating: number
-    reviewCount: number
-    inStock: boolean
-    brand: string
-    isNew: boolean
-    isHit: boolean
-  }
+  product: Product
 }
 
 function formatPrice(price: number): string {
@@ -30,7 +18,7 @@ function formatPrice(price: number): string {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { sessionId, setCartItems, cartItems } = useStore()
+  const { addToCart } = useStore()
   const [adding, setAdding] = useState(false)
   const [imgError, setImgError] = useState(false)
 
@@ -38,34 +26,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
     : 0
 
-  const addToCart = async () => {
+  const handleAddToCart = async () => {
     setAdding(true)
-    try {
-      const res = await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId,
-          productId: product.id,
-          quantity: 1,
-        }),
-      })
-      if (!res.ok) throw new Error('Failed to add')
-      const data = await res.json()
-      
-      // Refresh cart items
-      const cartRes = await fetch(`/api/cart?sessionId=${sessionId}`)
-      if (cartRes.ok) {
-        const cartData = await cartRes.json()
-        setCartItems(cartData.items)
-      }
-      
-      toast.success('Товар добавлен в корзину')
-    } catch {
-      toast.error('Ошибка при добавлении товара')
-    } finally {
-      setAdding(false)
-    }
+    // Small delay for visual feedback
+    await new Promise((r) => setTimeout(r, 200))
+    addToCart(product)
+    toast.success('Товар добавлен в корзину')
+    setAdding(false)
   }
 
   return (
@@ -158,7 +125,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Add to Cart */}
         <Button
-          onClick={addToCart}
+          onClick={handleAddToCart}
           disabled={!product.inStock || adding}
           className="mt-2 w-full bg-[#FF1744] hover:bg-[#D50032] text-white font-medium text-sm h-9"
         >

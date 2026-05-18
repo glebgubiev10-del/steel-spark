@@ -362,14 +362,16 @@ function CatalogPage() {
     return () => { cancelled = true }
   }, [buildQuery])
 
-  // Sync selectedCategory from store
-  useEffect(() => {
-    if (selectedCategory) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFilters((prev) => ({ ...prev, category: selectedCategory }))
+  // Sync selectedCategory from store (useRef to avoid effect setState)
+  const prevCategoryRef = useCallback((cat: string | null) => {
+    if (cat) {
+      setFilters((prev) => ({ ...prev, category: cat }))
       setSelectedCategory(null)
     }
-  }, [selectedCategory, setSelectedCategory])
+  }, [setSelectedCategory])
+  if (selectedCategory) {
+    prevCategoryRef(selectedCategory)
+  }
 
   const handleApplyFilters = () => {
     setMobileFiltersOpen(false)
@@ -746,72 +748,11 @@ function ContactsPage() {
    ============================================ */
 
 function CartPage() {
-  const { sessionId, cartItems, setCartItems, cartTotal, cartCount, setCurrentPage } = useStore()
-  const [loading, setLoading] = useState(true)
+  const { cartItems, removeFromCart, updateQuantity, cartTotal, cartCount, setCurrentPage } = useStore()
 
-  useEffect(() => {
-    async function fetchCart() {
-      try {
-        const res = await fetch(`/api/cart?sessionId=${sessionId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setCartItems(data.items)
-        }
-      } catch {
-        // silently fail
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchCart()
-  }, [sessionId, setCartItems])
-
-  const updateQuantity = async (cartItemId: string, quantity: number) => {
-    if (quantity < 1) return
-    try {
-      const res = await fetch('/api/cart', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, cartItemId, quantity }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setCartItems(
-          cartItems.map((item) => (item.id === cartItemId ? data.item : item))
-        )
-      }
-    } catch {
-      toast.error('Ошибка при обновлении корзины')
-    }
-  }
-
-  const removeItem = async (cartItemId: string) => {
-    try {
-      const res = await fetch('/api/cart', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, cartItemId }),
-      })
-      if (res.ok) {
-        setCartItems(cartItems.filter((item) => item.id !== cartItemId))
-        toast.success('Товар удалён из корзины')
-      }
-    } catch {
-      toast.error('Ошибка при удалении товара')
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
-        <Skeleton className="h-8 w-48 mb-6" />
-        <div className="flex flex-col gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
-          ))}
-        </div>
-      </div>
-    )
+  const handleRemoveItem = (id: string) => {
+    removeFromCart(id)
+    toast.success('Товар удалён из корзины')
   }
 
   return (
@@ -910,7 +851,7 @@ function CartPage() {
                               variant="ghost"
                               size="sm"
                               className="text-[#78909C] hover:text-[#FF1744] gap-1"
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => handleRemoveItem(item.id)}
                             >
                               <Trash2 className="size-4" />
                               Удалить

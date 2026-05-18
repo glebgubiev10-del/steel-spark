@@ -1,6 +1,38 @@
-import { db } from '../src/lib/db';
+/* ============================================
+   СТАТИЧЕСКИЕ ДАННЫЕ ДЛЯ МАГАЗИНА «СТАЛЬИСКРА»
+   ============================================ */
 
-const categories = [
+export interface Category {
+  id: string
+  name: string
+  slug: string
+  icon: string
+  image: string
+  _count: { products: number }
+}
+
+export interface Product {
+  id: string
+  name: string
+  slug: string
+  description: string
+  price: number
+  oldPrice: number | null
+  categoryId: string
+  category: { id: string; name: string; slug: string }
+  image: string
+  rating: number
+  reviewCount: number
+  inStock: boolean
+  brand: string
+  isNew: boolean
+  isHit: boolean
+  createdAt: string
+}
+
+/* ---------- КАТЕГОРИИ ---------- */
+
+const rawCategories = [
   {
     id: 'cat-1',
     name: 'Электроинструменты',
@@ -36,9 +68,11 @@ const categories = [
     icon: 'Building2',
     image: '/categories/construction-equip.png',
   },
-];
+]
 
-const products = [
+/* ---------- ТОВАРЫ ---------- */
+
+const rawProducts: Omit<Product, 'category' | '_count'>[] = [
   // Электроинструменты
   {
     id: 'prod-1',
@@ -55,6 +89,7 @@ const products = [
     brand: 'Bosch',
     isNew: false,
     isHit: true,
+    createdAt: '2024-01-15T10:00:00Z',
   },
   {
     id: 'prod-2',
@@ -71,6 +106,7 @@ const products = [
     brand: 'Makita',
     isNew: false,
     isHit: true,
+    createdAt: '2024-02-01T10:00:00Z',
   },
   {
     id: 'prod-3',
@@ -87,6 +123,7 @@ const products = [
     brand: 'DeWalt',
     isNew: true,
     isHit: false,
+    createdAt: '2024-06-10T10:00:00Z',
   },
   {
     id: 'prod-4',
@@ -103,6 +140,7 @@ const products = [
     brand: 'Makita',
     isNew: false,
     isHit: false,
+    createdAt: '2024-03-05T10:00:00Z',
   },
   {
     id: 'prod-5',
@@ -119,6 +157,7 @@ const products = [
     brand: 'Bosch',
     isNew: false,
     isHit: false,
+    createdAt: '2024-04-12T10:00:00Z',
   },
 
   // Ручной инструмент
@@ -137,6 +176,7 @@ const products = [
     brand: 'Арсенал',
     isNew: false,
     isHit: true,
+    createdAt: '2024-01-20T10:00:00Z',
   },
   {
     id: 'prod-7',
@@ -153,6 +193,7 @@ const products = [
     brand: 'Matrix',
     isNew: false,
     isHit: false,
+    createdAt: '2024-02-15T10:00:00Z',
   },
   {
     id: 'prod-8',
@@ -169,6 +210,7 @@ const products = [
     brand: 'Stanley',
     isNew: false,
     isHit: false,
+    createdAt: '2024-03-20T10:00:00Z',
   },
   {
     id: 'prod-9',
@@ -185,6 +227,7 @@ const products = [
     brand: 'Knipex',
     isNew: true,
     isHit: false,
+    createdAt: '2024-07-01T10:00:00Z',
   },
   {
     id: 'prod-10',
@@ -201,6 +244,7 @@ const products = [
     brand: 'Makita',
     isNew: false,
     isHit: true,
+    createdAt: '2024-01-25T10:00:00Z',
   },
 
   // Расходные материалы
@@ -219,6 +263,7 @@ const products = [
     brand: 'Distar',
     isNew: false,
     isHit: false,
+    createdAt: '2024-04-01T10:00:00Z',
   },
   {
     id: 'prod-12',
@@ -235,6 +280,7 @@ const products = [
     brand: 'Bosch',
     isNew: false,
     isHit: false,
+    createdAt: '2024-02-10T10:00:00Z',
   },
   {
     id: 'prod-13',
@@ -251,6 +297,7 @@ const products = [
     brand: 'Sia',
     isNew: false,
     isHit: false,
+    createdAt: '2024-03-15T10:00:00Z',
   },
   {
     id: 'prod-14',
@@ -267,6 +314,7 @@ const products = [
     brand: 'Luga',
     isNew: true,
     isHit: true,
+    createdAt: '2024-07-05T10:00:00Z',
   },
   {
     id: 'prod-15',
@@ -283,6 +331,7 @@ const products = [
     brand: 'Bosch',
     isNew: false,
     isHit: false,
+    createdAt: '2024-05-01T10:00:00Z',
   },
 
   // Садовая техника
@@ -301,6 +350,7 @@ const products = [
     brand: 'Husqvarna',
     isNew: false,
     isHit: true,
+    createdAt: '2024-01-30T10:00:00Z',
   },
   {
     id: 'prod-17',
@@ -317,6 +367,7 @@ const products = [
     brand: 'Bosch',
     isNew: false,
     isHit: false,
+    createdAt: '2024-04-20T10:00:00Z',
   },
   {
     id: 'prod-18',
@@ -333,6 +384,7 @@ const products = [
     brand: 'Makita',
     isNew: true,
     isHit: false,
+    createdAt: '2024-06-15T10:00:00Z',
   },
   {
     id: 'prod-19',
@@ -349,6 +401,7 @@ const products = [
     brand: 'DeWalt',
     isNew: false,
     isHit: false,
+    createdAt: '2024-05-10T10:00:00Z',
   },
   {
     id: 'prod-20',
@@ -365,6 +418,7 @@ const products = [
     brand: 'Stihl',
     isNew: false,
     isHit: false,
+    createdAt: '2024-03-25T10:00:00Z',
   },
 
   // Строительное оборудование
@@ -383,6 +437,7 @@ const products = [
     brand: 'Лебедянь',
     isNew: false,
     isHit: true,
+    createdAt: '2024-02-20T10:00:00Z',
   },
   {
     id: 'prod-22',
@@ -399,6 +454,7 @@ const products = [
     brand: 'Sokol',
     isNew: false,
     isHit: false,
+    createdAt: '2024-04-05T10:00:00Z',
   },
   {
     id: 'prod-23',
@@ -415,6 +471,7 @@ const products = [
     brand: 'Fubag',
     isNew: false,
     isHit: false,
+    createdAt: '2024-03-10T10:00:00Z',
   },
   {
     id: 'prod-24',
@@ -431,6 +488,7 @@ const products = [
     brand: 'Hyundai',
     isNew: true,
     isHit: true,
+    createdAt: '2024-07-10T10:00:00Z',
   },
   {
     id: 'prod-25',
@@ -447,32 +505,54 @@ const products = [
     brand: 'Wacker Neuson',
     isNew: false,
     isHit: false,
+    createdAt: '2024-01-05T10:00:00Z',
   },
-];
+]
 
-async function main() {
-  console.log('🌱 Начинаем заполнение базы данных...');
+/* ---------- ВЫЧИСЛЯЕМЫЕ ДАННЫЕ ---------- */
 
-  // Очистка существующих данных
-  await db.cartItem.deleteMany();
-  await db.product.deleteMany();
-  await db.category.deleteMany();
-
-  // Создание категорий
-  for (const category of categories) {
-    await db.category.create({ data: category });
-  }
-  console.log(`✅ Создано ${categories.length} категорий`);
-
-  // Создание товаров
-  for (const product of products) {
-    await db.product.create({ data: product });
-  }
-  console.log(`✅ Создано ${products.length} товаров`);
-
-  console.log('🎉 Заполнение базы данных завершено!');
+const productCountByCategory: Record<string, number> = {}
+for (const p of rawProducts) {
+  productCountByCategory[p.categoryId] = (productCountByCategory[p.categoryId] || 0) + 1
 }
 
-main()
-  .catch(console.error)
-  .finally(() => db.$disconnect());
+const categoryMap: Record<string, { id: string; name: string; slug: string }> = {}
+for (const c of rawCategories) {
+  categoryMap[c.id] = { id: c.id, name: c.name, slug: c.slug }
+}
+
+export const categories: Category[] = rawCategories.map((c) => ({
+  ...c,
+  _count: { products: productCountByCategory[c.id] || 0 },
+}))
+
+export const products: Product[] = rawProducts.map((p) => ({
+  ...p,
+  category: categoryMap[p.categoryId],
+}))
+
+/* ---------- ВСЕ БРЕНДЫ ---------- */
+
+export const allBrands = [...new Set(products.map((p) => p.brand))].sort()
+
+/* ---------- ПОИСКОВЫЕ ФУНКЦИИ ---------- */
+
+export function getProductsByCategory(slug: string): Product[] {
+  return products.filter((p) => p.category.slug === slug)
+}
+
+export function getHitProducts(): Product[] {
+  return products.filter((p) => p.isHit)
+}
+
+export function getNewProducts(): Product[] {
+  return products.filter((p) => p.isNew)
+}
+
+export function getProductById(id: string): Product | undefined {
+  return products.find((p) => p.id === id)
+}
+
+export function getProductBySlug(slug: string): Product | undefined {
+  return products.find((p) => p.slug === slug)
+}

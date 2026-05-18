@@ -1,97 +1,88 @@
-import { db } from '@/lib/db'
+import { products, type Product } from '@/lib/data'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl
 
-    // Build filter conditions
-    const where: Record<string, unknown> = {}
+    let filtered: Product[] = [...products]
 
     // Category filter
     const category = searchParams.get('category')
     if (category) {
-      where.category = { slug: category }
+      filtered = filtered.filter((p) => p.category.slug === category)
     }
 
     // Search filter (name or description)
     const search = searchParams.get('search')
     if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { description: { contains: search } },
-      ]
+      const q = search.toLowerCase()
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q)
+      )
     }
 
-    // Brand filter
+    // Brand filter (single brand from query)
     const brand = searchParams.get('brand')
     if (brand) {
-      where.brand = brand
-    }
-
-    // In-stock filter
-    const inStock = searchParams.get('inStock')
-    if (inStock !== null) {
-      where.inStock = inStock === 'true'
-    }
-
-    // New products filter
-    const isNew = searchParams.get('isNew')
-    if (isNew !== null) {
-      where.isNew = isNew === 'true'
-    }
-
-    // Hit products filter
-    const isHit = searchParams.get('isHit')
-    if (isHit !== null) {
-      where.isHit = isHit === 'true'
+      filtered = filtered.filter((p) => p.brand === brand)
     }
 
     // Price range filters
     const minPrice = searchParams.get('minPrice')
     const maxPrice = searchParams.get('maxPrice')
-    if (minPrice || maxPrice) {
-      const priceFilter: Record<string, number> = {}
-      if (minPrice) priceFilter.gte = parseFloat(minPrice)
-      if (maxPrice) priceFilter.lte = parseFloat(maxPrice)
-      where.price = priceFilter
+    if (minPrice) {
+      filtered = filtered.filter((p) => p.price >= parseFloat(minPrice))
+    }
+    if (maxPrice) {
+      filtered = filtered.filter((p) => p.price <= parseFloat(maxPrice))
+    }
+
+    // In-stock filter
+    const inStock = searchParams.get('inStock')
+    if (inStock === 'true') {
+      filtered = filtered.filter((p) => p.inStock)
+    }
+
+    // New products filter
+    const isNew = searchParams.get('isNew')
+    if (isNew === 'true') {
+      filtered = filtered.filter((p) => p.isNew)
+    }
+
+    // Hit products filter
+    const isHit = searchParams.get('isHit')
+    if (isHit === 'true') {
+      filtered = filtered.filter((p) => p.isHit)
     }
 
     // Sorting
     const sort = searchParams.get('sort') || 'newest'
-    type OrderBy = Record<string, 'asc' | 'desc'>
-    let orderBy: OrderBy = { createdAt: 'desc' }
-
     switch (sort) {
       case 'price-asc':
-        orderBy = { price: 'asc' }
+        filtered.sort((a, b) => a.price - b.price)
         break
       case 'price-desc':
-        orderBy = { price: 'desc' }
+        filtered.sort((a, b) => b.price - a.price)
         break
       case 'rating':
-        orderBy = { rating: 'desc' }
+        filtered.sort((a, b) => b.rating - a.rating)
         break
       case 'name':
-        orderBy = { name: 'asc' }
+        filtered.sort((a, b) => a.name.localeCompare(b.name, 'ru'))
         break
       case 'newest':
       default:
-        orderBy = { createdAt: 'desc' }
+        filtered.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
         break
     }
 
-    // Get total count
-    const total = await db.product.count({ where })
-
-    // Fetch products
-    const products = await db.product.findMany({
-      where,
-      include: { category: true },
-      orderBy,
-    })
-
-    return NextResponse.json({ products, total })
+    return NextResponse.json({ products: filtered, total: filtered.length })
   } catch (error) {
     console.error('Error fetching products:', error)
     return NextResponse.json(

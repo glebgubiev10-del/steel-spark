@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import type { Product } from '@/lib/data'
 
 export type Page = 'home' | 'catalog' | 'about' | 'contacts' | 'cart'
 
@@ -30,48 +32,107 @@ interface StoreState {
   searchQuery: string
   setSearchQuery: (query: string) => void
 
-  // Cart
+  // Cart (fully client-side)
   cartItems: CartItemType[]
   cartOpen: boolean
-  sessionId: string
   setCartOpen: (open: boolean) => void
-  setCartItems: (items: CartItemType[]) => void
+  addToCart: (product: Product) => void
+  removeFromCart: (cartItemId: string) => void
+  updateQuantity: (cartItemId: string, quantity: number) => void
+  clearCart: () => void
   cartTotal: () => number
   cartCount: () => number
 }
 
-function generateSessionId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID()
-  }
-  return Math.random().toString(36).substring(2) + Date.now().toString(36)
-}
+export const useStore = create<StoreState>()(
+  persist(
+    (set, get) => ({
+      // Navigation
+      currentPage: 'home' as Page,
+      setCurrentPage: (page) => {
+        set({ currentPage: page })
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      },
 
-export const useStore = create<StoreState>((set, get) => ({
-  // Navigation
-  currentPage: 'home',
-  setCurrentPage: (page) => set({ currentPage: page }),
+      // Category filter
+      selectedCategory: null,
+      setSelectedCategory: (slug) => set({ selectedCategory: slug }),
 
-  // Category filter
-  selectedCategory: null,
-  setSelectedCategory: (slug) => set({ selectedCategory: slug }),
+      // Search
+      searchQuery: '',
+      setSearchQuery: (query) => set({ searchQuery: query }),
 
-  // Search
-  searchQuery: '',
-  setSearchQuery: (query) => set({ searchQuery: query }),
+      // Cart
+      cartItems: [],
+      cartOpen: false,
+      setCartOpen: (open) => set({ cartOpen: open }),
 
-  // Cart
-  cartItems: [],
-  cartOpen: false,
-  sessionId: generateSessionId(),
-  setCartOpen: (open) => set({ cartOpen: open }),
-  setCartItems: (items) => set({ cartItems: items }),
-  cartTotal: () => {
-    const { cartItems } = get()
-    return cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
-  },
-  cartCount: () => {
-    const { cartItems } = get()
-    return cartItems.reduce((sum, item) => sum + item.quantity, 0)
-  },
-}))
+      addToCart: (product: Product) => {
+        const { cartItems } = get()
+        const existingItem = cartItems.find(
+          (item) => item.productId === product.id
+        )
+
+        if (existingItem) {
+          set({
+            cartItems: cartItems.map((item) =>
+              item.id === existingItem.id
+                ? { ...item, quantity: item.quantity + 1 }
+                : item
+            ),
+          })
+        } else {
+          const newItem: CartItemType = {
+            id: `cart-${Date.now()}-${product.id}`,
+            productId: product.id,
+            quantity: 1,
+            product: {
+              id: product.id,
+              name: product.name,
+              slug: product.slug,
+              price: product.price,
+              image: product.image,
+              brand: product.brand,
+              inStock: product.inStock,
+            },
+          }
+          set({ cartItems: [...cartItems, newItem] })
+        }
+      },
+
+      removeFromCart: (cartItemId: string) => {
+        set({ cartItems: get().cartItems.filter((item) => item.id !== cartItemId) })
+      },
+
+      updateQuantity: (cartItemId: string, quantity: number) => {
+        if (quantity < 1) return
+        set({
+          cartItems: get().cartItems.map((item) =>
+            item.id === cartItemId ? { ...item, quantity } : item
+          ),
+        })
+      },
+
+      clearCart: () => set({ cartItems: [] }),
+
+      cartTotal: () => {
+        const { cartItems } = get()
+        return cartItems.reduce(
+          (sum, item) => sum + item.product.price * item.quantity,
+          0
+        )
+      },
+
+      cartCount: () => {
+        const { cartItems } = get()
+        return cartItems.reduce((sum, item) => sum + item.quantity, 0)
+      },
+    }),
+    {
+      name: 'staliskra-cart',
+      partialize: (state) => ({
+        cartItems: state.cartItems,
+      }),
+    }
+  )
+)

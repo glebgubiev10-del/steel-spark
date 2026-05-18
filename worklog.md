@@ -96,3 +96,31 @@ Work Log:
 
 Stage Summary:
 - All bugs fixed, lint clean, all APIs verified working
+
+---
+Task ID: 7
+Agent: Main
+Task: Prepare project for Vercel deployment
+
+Work Log:
+- Created src/lib/data.ts with all static product/category data (removed Prisma/SQLite dependency)
+- Rewrote /api/products route to use static data with in-memory filtering/sorting
+- Rewrote /api/categories route to use static data
+- Rewrote /api/cart route as minimal stub (cart is now fully client-side)
+- Updated Zustand store with persist middleware and full client-side cart methods (addToCart, removeFromCart, updateQuantity, clearCart)
+- Updated ProductCard.tsx to use store.addToCart() instead of API call
+- Updated CartSidebar.tsx to use store methods directly instead of API calls
+- Updated CartPage in page.tsx to use store methods instead of API calls
+- Updated next.config.ts: removed `output: "standalone"` for Vercel compatibility
+- Removed Prisma: deleted prisma/schema.prisma, prisma/seed.ts, src/lib/db.ts, .env, db/
+- Updated package.json: removed @prisma/client, prisma, db:* scripts; changed name to "staliskra-store"
+- Fixed lint error: replaced setState-in-effect pattern with useCallback-based approach
+- Ran `bun install` to clean up lockfile (removed 2 prisma packages)
+- Verified lint passes clean
+- Verified dev server starts and APIs return correct data
+- Created README.md with deployment instructions
+
+Stage Summary:
+- Project fully prepared for Vercel: no database dependency, client-side cart with localStorage persistence
+- All static data in src/lib/data.ts, API routes use it instead of Prisma
+- Build will work on Vercel serverless without any external services
